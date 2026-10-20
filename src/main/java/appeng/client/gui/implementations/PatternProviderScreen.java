@@ -20,6 +20,7 @@ package appeng.client.gui.implementations;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.core.Direction;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import appeng.api.config.LockCraftingMode;
@@ -73,6 +74,23 @@ public class PatternProviderScreen<C extends PatternProviderMenu> extends AEBase
         this.blockingModeButton.set(this.menu.getBlockingMode());
         this.lockCraftingModeButton.set(this.menu.getLockCraftingMode());
         this.showInPatternAccessTerminalButton.setState(this.menu.getShowInAccessTerminal() == YesNo.YES);
+
+        var side = menu.getStalledSide();
+        setTextHidden("stalled_status", side == null);
+        if (side != null) {
+          setTextContent("stalled_status", GuiText.PatternProviderStalled.text(directionName(side)));
+        }
+    }
+
+    private static Component directionName(Direction side) {
+        return switch (side) {
+            case DOWN -> GuiText.DirectionDown.text();
+            case UP -> GuiText.DirectionUp.text();
+            case NORTH -> GuiText.DirectionNorth.text();
+            case SOUTH -> GuiText.DirectionSouth.text();
+            case WEST -> GuiText.DirectionWest.text();
+            case EAST -> GuiText.DirectionEast.text();
+        };
     }
 
     private void selectNextPatternProviderMode() {

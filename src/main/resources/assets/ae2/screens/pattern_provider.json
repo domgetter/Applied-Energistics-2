@@ -36,6 +36,17 @@
         "top": 34
       }
     },
+    "stalled_status": {
+      "text": {
+        "text": "",
+        "color": "#a36e03"
+      },
+      "position": {
+        "right": 8,
+        "top": 34
+      },
+      "align": "RIGHT"
+    },
     "interface_stored_items": {
       "text": {
         "translate": "gui.ae2.ReturnInventory"

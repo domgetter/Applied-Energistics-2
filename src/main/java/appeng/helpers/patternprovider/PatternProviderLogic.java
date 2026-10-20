@@ -540,6 +540,11 @@ public class PatternProviderLogic implements InternalInventoryHost, ICraftingPro
         return !sendList.isEmpty();
     }
 
+    @Nullable
+    public Direction getSendDirection() {
+        return sendDirection;
+    }
+
     private boolean hasWorkToDo() {
         return !sendList.isEmpty() || !returnInv.isEmpty();
     }

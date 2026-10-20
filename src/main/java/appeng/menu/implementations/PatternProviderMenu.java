@@ -20,6 +20,7 @@ package appeng.menu.implementations;
 
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.core.Direction;
 
 import appeng.api.config.LockCraftingMode;
 import appeng.api.config.Settings;
@@ -34,6 +35,8 @@ import appeng.menu.SlotSemantics;
 import appeng.menu.guisync.GuiSync;
 import appeng.menu.slot.AppEngSlot;
 import appeng.menu.slot.RestrictedInputSlot;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @see appeng.client.gui.implementations.PatternProviderScreen
@@ -56,6 +59,8 @@ public class PatternProviderMenu extends AEBaseMenu {
     public LockCraftingMode craftingLockedReason = LockCraftingMode.NONE;
     @GuiSync(7)
     public GenericStack unlockStack = null;
+    @GuiSync(8)
+    public Direction stalledSide = null;
 
     public PatternProviderMenu(MenuType<? extends PatternProviderMenu> menuType, int id, Inventory playerInventory,
             PatternProviderLogicHost host) {
@@ -88,6 +93,7 @@ public class PatternProviderMenu extends AEBaseMenu {
             lockCraftingMode = logic.getConfigManager().getSetting(Settings.LOCK_CRAFTING_MODE);
             craftingLockedReason = logic.getCraftingLockedReason();
             unlockStack = logic.getUnlockStack();
+            stalledSide = logic.isBusy() ? logic.getSendDirection() : null;
         }
 
         super.broadcastChanges();
@@ -115,5 +121,9 @@ public class PatternProviderMenu extends AEBaseMenu {
 
     public YesNo getShowInAccessTerminal() {
         return showInAccessTerminal;
+    }
+
+    public @Nullable Direction getStalledSide() {
+        return stalledSide;
     }
 }
