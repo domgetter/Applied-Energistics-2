@@ -43,6 +43,7 @@ public final class Tooltips {
     public static final Style QUOTE_TEXT = NORMAL_TOOLTIP_TEXT.withItalic(true);
     public static final Style NUMBER_TEXT = Style.EMPTY.withColor(TextColor.fromRgb(0x886eff)).withItalic(false);
     public static final Style UNIT_TEXT = Style.EMPTY.withColor(TextColor.fromRgb(0xffde7d)).withItalic(false);
+    public static final Style STALLED_TEXT = Style.EMPTY.withColor(TextColor.fromRgb(0xa36e03)).withItalic(false);
 
     public static final Style RED = Style.EMPTY.withColor(ChatFormatting.RED);
     public static final Style GREEN = Style.EMPTY.withColor(ChatFormatting.GREEN);

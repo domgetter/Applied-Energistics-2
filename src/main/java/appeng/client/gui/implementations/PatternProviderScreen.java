@@ -33,6 +33,8 @@ import appeng.client.gui.widgets.ServerSettingToggleButton;
 import appeng.client.gui.widgets.SettingToggleButton;
 import appeng.client.gui.widgets.ToggleButton;
 import appeng.core.localization.GuiText;
+import appeng.core.localization.DirectionNames;
+import appeng.core.localization.Tooltips;
 import appeng.core.network.ServerboundPacket;
 import appeng.core.network.serverbound.ConfigButtonPacket;
 import appeng.menu.implementations.PatternProviderMenu;
@@ -78,19 +80,8 @@ public class PatternProviderScreen<C extends PatternProviderMenu> extends AEBase
         var side = menu.getStalledSide();
         setTextHidden("stalled_status", side == null);
         if (side != null) {
-          setTextContent("stalled_status", GuiText.PatternProviderStalled.text(directionName(side)));
+          setTextContent("stalled_status", GuiText.PatternProviderStalled.text(DirectionNames.of(side)));
         }
-    }
-
-    private static Component directionName(Direction side) {
-        return switch (side) {
-            case DOWN -> GuiText.DirectionDown.text();
-            case UP -> GuiText.DirectionUp.text();
-            case NORTH -> GuiText.DirectionNorth.text();
-            case SOUTH -> GuiText.DirectionSouth.text();
-            case WEST -> GuiText.DirectionWest.text();
-            case EAST -> GuiText.DirectionEast.text();
-        };
     }
 
     private void selectNextPatternProviderMode() {

@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.Direction;
 
 import appeng.api.client.AEKeyRendering;
 import appeng.api.integrations.igtooltip.TooltipBuilder;
@@ -13,6 +14,9 @@ import appeng.api.integrations.igtooltip.providers.ServerDataProvider;
 import appeng.api.stacks.AmountFormat;
 import appeng.api.stacks.GenericStack;
 import appeng.core.localization.InGameTooltip;
+import appeng.core.localization.GuiText;
+import appeng.core.localization.DirectionNames;
+import appeng.core.localization.Tooltips;
 import appeng.helpers.patternprovider.PatternProviderLogicHost;
 
 /**
@@ -23,6 +27,7 @@ public final class PatternProviderDataProvider
 
     private static final String NBT_LOCK_REASON = "craftingLockReason";
     private static final String NBT_LOCK_UNTIL_RESULT_STACK = "craftingLockUntilResultStack";
+    private static final String NBT_STALLED_SIDE = "stalledSide";
 
     @Override
     public void buildTooltip(PatternProviderLogicHost host, TooltipContext context, TooltipBuilder tooltip) {
@@ -46,11 +51,25 @@ public final class PatternProviderDataProvider
             tooltip.addLine(
                     InGameTooltip.CraftingLockedUntilResult.text(stackName, stackAmount).withStyle(ChatFormatting.RED));
         }
+        var stalled = context.serverData().getString(NBT_STALLED_SIDE);
+        if (!stalled.isEmpty()) {
+            var side = Direction.byName(stalled);
+            if (side != null) {
+                tooltip.addLine(GuiText.PatternProviderStalled.text(DirectionNames.of(side)).withStyle(Tooltips.STALLED_TEXT));
+            }
+        }
     }
 
     @Override
     public void provideServerData(Player player, PatternProviderLogicHost host, CompoundTag serverData) {
         var logic = host.getLogic();
+
+        if (logic.isBusy()) {
+            var side = logic.getSendDirection();
+            if (side != null) {
+                serverData.putString(NBT_STALLED_SIDE, side.getSerializedName());
+            }
+        }
 
         Component reason = null;
         switch (logic.getCraftingLockedReason()) {
