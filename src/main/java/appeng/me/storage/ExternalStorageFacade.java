@@ -122,6 +122,11 @@ public abstract class ExternalStorageFacade implements MEStorage {
         this.extractableOnly = extractableOnly;
     }
 
+    @Override
+    public boolean supportsTransactions() {
+        return true;
+    }
+
     private static abstract class ResourceHandlerFacade<R extends Resource, K extends AEKey>
             extends ExternalStorageFacade {
         protected final ResourceHandler<R> handler;

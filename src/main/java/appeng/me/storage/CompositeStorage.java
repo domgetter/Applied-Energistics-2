@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.transfer.transaction.RootCommitJournal;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
@@ -23,6 +25,10 @@ public class CompositeStorage implements MEStorage, ITickingMonitor {
     private Map<AEKeyType, MEStorage> storages;
 
     private boolean forceCacheRebuild = true;
+
+    private final RootCommitJournal cacheRebuildJournal = new RootCommitJournal(() -> {
+        forceCacheRebuild = true;
+    });
 
     public CompositeStorage(Map<AEKeyType, MEStorage> storages) {
         this.storages = storages;
@@ -46,6 +52,18 @@ public class CompositeStorage implements MEStorage, ITickingMonitor {
 
         if (inserted > 0 && mode == Actionable.MODULATE) {
             forceCacheRebuild = true;
+        }
+
+        return inserted;
+    }
+
+    @Override
+    public long insert(AEKey what, long amount, Transaction tx, IActionSource source) {
+        var storage = storages.get(what.getType());
+        var inserted = storage != null ? storage.insert(what, amount, tx, source) : 0;
+
+        if (inserted > 0) {
+            cacheRebuildJournal.updateSnapshots(tx);
         }
 
         return inserted;
@@ -109,6 +127,19 @@ public class CompositeStorage implements MEStorage, ITickingMonitor {
             total += value.getEstimatedStackCount();
         }
         return total;
+    }
+
+    /**
+     * Only support transactions if all storages do.
+     */
+    @Override
+    public boolean supportsTransactions() {
+        for (var storage : storages.values()) {
+            if (!storage.supportsTransactions()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private class InventoryCache {
