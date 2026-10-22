@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import appeng.api.AECapabilities;
 import appeng.api.behaviors.ExternalStorageStrategy;
@@ -62,6 +63,16 @@ class PatternProviderTargetCache {
             @Override
             public long insert(AEKey what, long amount, Actionable type) {
                 return storage.insert(what, amount, type, src);
+            }
+
+            @Override
+            public long insert(AEKey what, long amount, Transaction tx) {
+                return storage.insert(what, amount, tx, src);
+            }
+
+            @Override
+            public boolean supportsTransactions() {
+                return storage.supportsTransactions();
             }
 
             @Override

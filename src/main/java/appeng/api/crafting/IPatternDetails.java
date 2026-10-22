@@ -85,13 +85,17 @@ public interface IPatternDetails {
      * @param inputHolder For each {@link IInput}, the relevant items. The ownership is given to the pattern, do
      *                    whatever with the key counters as long as all of their contents end up in the input sink.
      * @param inputSink   Where to push the inputs to.
+     * @return True if all inputs were pushed, false if they were not.
      */
-    default void pushInputsToExternalInventory(KeyCounter[] inputHolder, PatternInputSink inputSink) {
+    default boolean pushInputsToExternalInventory(KeyCounter[] inputHolder, PatternInputSink inputSink) {
         for (var inputList : inputHolder) {
             for (var input : inputList) {
-                inputSink.pushInput(input.getKey(), input.getLongValue());
+                var keepPushing = inputSink.pushInput(input.getKey(), input.getLongValue());
+                if (!keepPushing)
+                    return false;
             }
         }
+        return true;
     }
 
     /**
@@ -132,6 +136,9 @@ public interface IPatternDetails {
     }
 
     interface PatternInputSink {
-        void pushInput(AEKey key, long amount);
+        /**
+         * @return False to stop pushing any more inputs.
+         */
+        boolean pushInput(AEKey key, long amount);
     }
 }

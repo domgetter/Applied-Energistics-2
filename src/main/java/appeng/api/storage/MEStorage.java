@@ -29,6 +29,7 @@ import com.google.common.base.Preconditions;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
@@ -72,6 +73,18 @@ public interface MEStorage {
      * @return returns the number of items inserted.
      */
     default long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
+        return 0;
+    }
+
+    /**
+     * Store new items into the ME Inventory with a provided transaction.
+     *
+     * @param what   what to insert
+     * @param amount how much of it to insert. must not be negative
+     * @param tx     transaction. there can only be one per thread
+     * @return returns the number of items inserted.
+     */
+    default long insert(AEKey what, long amount, Transaction tx, IActionSource source) {
         return 0;
     }
 
@@ -126,6 +139,14 @@ public interface MEStorage {
         Objects.requireNonNull(mode, "Cannot pass a null mode");
         Objects.requireNonNull(source, "Cannot pass a null source");
         Preconditions.checkArgument(amount >= 0, "Cannot pass a negative amount");
+    }
+
+    /**
+     * Reports whether this MEStorage supports inserting items using a transaction. Default to false so that existing
+     * MEStorage implementations work the same.
+     */
+    default boolean supportsTransactions() {
+        return false;
     }
 
 }

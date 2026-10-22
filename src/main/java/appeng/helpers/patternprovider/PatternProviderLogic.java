@@ -42,6 +42,7 @@ import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.LockCraftingMode;
@@ -359,18 +360,41 @@ public class PatternProviderLogic implements InternalInventoryHost, ICraftingPro
                 continue;
             }
 
-            if (this.adapterAcceptsAll(adapter, inputHolder)) {
-                patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
-                    var inserted = adapter.insert(what, amount, Actionable.MODULATE);
-                    if (inserted < amount) {
-                        this.addToSendList(what, amount - inserted);
-                    }
-                });
-                onPushPatternSuccess(patternDetails);
-                this.sendDirection = direction;
-                this.sendStacksOut();
-                roundRobinIndex += i + 1;
-                return true;
+            if (adapter.supportsTransactions()) {
+                try (var tx = Transaction.openRoot()) {
+                    var pushedAll = patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
+                        // Return whether or not this amount was inserted.
+                        return adapter.insert(what, amount, tx) >= amount;
+                    });
+
+                    // If any one of the items cannot fit into the target, close this transaction without
+                    // committing and move on to the next possible target.
+                    if (!pushedAll)
+                        continue;
+
+                    // Commit this transaction to actually push the items
+                    tx.commit();
+
+                    onPushPatternSuccess(patternDetails);
+                    roundRobinIndex += i + 1;
+                    return true;
+                }
+            } else {
+                // If the adapter does not support transactional pushing, fall back to simulation-based push.
+                if (this.adapterAcceptsAll(adapter, inputHolder)) {
+                    patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
+                        var inserted = adapter.insert(what, amount, Actionable.MODULATE);
+                        if (inserted < amount) {
+                            this.addToSendList(what, amount - inserted);
+                        }
+                        return true;
+                    });
+                    onPushPatternSuccess(patternDetails);
+                    this.sendDirection = direction;
+                    this.sendStacksOut();
+                    roundRobinIndex += i + 1;
+                    return true;
+                }
             }
         }
 

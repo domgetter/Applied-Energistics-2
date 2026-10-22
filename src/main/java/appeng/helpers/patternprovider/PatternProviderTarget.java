@@ -30,6 +30,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import appeng.api.AECapabilities;
 import appeng.api.config.Actionable;
@@ -85,6 +86,16 @@ public interface PatternProviderTarget {
             }
 
             @Override
+            public long insert(AEKey what, long amount, Transaction tx) {
+                return storage.insert(what, amount, tx, src);
+            }
+
+            @Override
+            public boolean supportsTransactions() {
+                return storage.supportsTransactions();
+            }
+
+            @Override
             public boolean containsPatternInput(Set<AEKey> patternInputs) {
                 for (var stack : storage.getAvailableStacks()) {
                     if (patternInputs.contains(stack.getKey().dropSecondary())) {
@@ -97,6 +108,10 @@ public interface PatternProviderTarget {
     }
 
     long insert(AEKey what, long amount, Actionable type);
+
+    long insert(AEKey what, long amount, Transaction tx);
+
+    boolean supportsTransactions();
 
     boolean containsPatternInput(Set<AEKey> patternInputs);
 }

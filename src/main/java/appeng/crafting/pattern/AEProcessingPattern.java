@@ -111,11 +111,10 @@ public class AEProcessingPattern implements IPatternDetails {
     }
 
     @Override
-    public void pushInputsToExternalInventory(KeyCounter[] inputHolder, PatternInputSink inputSink) {
+    public boolean pushInputsToExternalInventory(KeyCounter[] inputHolder, PatternInputSink inputSink) {
         if (sparseInputs.size() == inputs.length) {
             // No compression -> no need to reorder
-            IPatternDetails.super.pushInputsToExternalInventory(inputHolder, inputSink);
-            return;
+            return IPatternDetails.super.pushInputsToExternalInventory(inputHolder, inputSink);
         }
 
         var allInputs = new KeyCounter();
@@ -138,9 +137,14 @@ public class AEProcessingPattern implements IPatternDetails {
                         .formatted(amount, key, available));
             }
 
-            inputSink.pushInput(key, amount);
+            var keepPushing = inputSink.pushInput(key, amount);
             allInputs.remove(key, amount);
+
+            // Stop pushing items to the sink if the sink reports it doesn't want/need any more.
+            if (!keepPushing)
+                return false;
         }
+        return true;
     }
 
     public static PatternDetailsTooltip getInvalidPatternTooltip(ItemStack stack, Level level,
