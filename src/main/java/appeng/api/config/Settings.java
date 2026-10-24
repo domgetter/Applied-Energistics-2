@@ -65,6 +65,7 @@ public final class Settings {
     public static final Setting<ViewItems> VIEW_MODE = register("view_mode", ViewItems.class);
     public static final Setting<RelativeDirection> IO_DIRECTION = register("io_direction", RelativeDirection.LEFT,
             RelativeDirection.RIGHT);
+    public static final Setting<YesNo> ATOMIC_PUSH = register("atomic_push", YesNo.YES, YesNo.NO);
     public static final Setting<YesNo> BLOCKING_MODE = register("blocking_mode", YesNo.YES, YesNo.NO);
     public static final Setting<LockCraftingMode> LOCK_CRAFTING_MODE = register("lock_crafting_mode",
             LockCraftingMode.class);

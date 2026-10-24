@@ -207,6 +207,11 @@ public class SettingToggleButton<T extends Enum<T>> extends IconButton {
             registerApp(Icon.BLOCKING_MODE_NO, Settings.BLOCKING_MODE, YesNo.NO, ButtonToolTips.InterfaceBlockingMode,
                     ButtonToolTips.NonBlocking);
 
+            registerApp(Icon.ATOMIC_PUSH_ON, Settings.ATOMIC_PUSH, YesNo.YES, ButtonToolTips.AtomicPush,
+                    ButtonToolTips.AtomicPushOn);
+            registerApp(Icon.ATOMIC_PUSH_OFF, Settings.ATOMIC_PUSH, YesNo.NO, ButtonToolTips.AtomicPush,
+                    ButtonToolTips.AtomicPushOff);
+
             registerApp(Icon.VIEW_MODE_CRAFTING, Settings.CRAFT_ONLY, YesNo.YES, ButtonToolTips.Craft,
                     ButtonToolTips.CraftOnly);
             registerApp(Icon.VIEW_MODE_ALL, Settings.CRAFT_ONLY, YesNo.NO, ButtonToolTips.Craft,

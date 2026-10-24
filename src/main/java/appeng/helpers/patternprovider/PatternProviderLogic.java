@@ -143,6 +143,7 @@ public class PatternProviderLogic implements InternalInventoryHost, ICraftingPro
                 .registerSetting(Settings.BLOCKING_MODE, YesNo.NO)
                 .registerSetting(Settings.PATTERN_ACCESS_TERMINAL, YesNo.YES)
                 .registerSetting(Settings.LOCK_CRAFTING_MODE, LockCraftingMode.NONE)
+                .registerSetting(Settings.ATOMIC_PUSH, YesNo.YES)
                 .build();
 
         this.returnInv = new PatternProviderReturnInventory(() -> {
@@ -361,17 +362,33 @@ public class PatternProviderLogic implements InternalInventoryHost, ICraftingPro
                 continue;
             }
 
-            try (var tx = Transaction.openRoot()) {
-                var pushedAll = new AtomicBoolean(true);
-                patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
-                    var inserted = adapter.insert(what, amount, tx);
-                    if (inserted < amount) {
-                        pushedAll.set(false);
+            if (this.isAtomicPush()) {
+                try (var tx = Transaction.openRoot()) {
+                    var pushedAll = new AtomicBoolean(true);
+                    patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
+                        var inserted = adapter.insert(what, amount, tx);
+                        if (inserted < amount) {
+                            pushedAll.set(false);
+                        }
+                    });
+                    if (pushedAll.get()) {
+                        tx.commit();
+                        onPushPatternSuccess(patternDetails);
+                        roundRobinIndex += i + 1;
+                        return true;
                     }
-                });
-                if (pushedAll.get()) {
-                    tx.commit();
+                }
+            } else {
+                if (this.adapterAcceptsAll(adapter, inputHolder)) {
+                    patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
+                        var inserted = adapter.insert(what, amount, Actionable.MODULATE);
+                        if (inserted < amount) {
+                            this.addToSendList(what, amount - inserted);
+                        }
+                    });
                     onPushPatternSuccess(patternDetails);
+                    this.sendDirection = direction;
+                    this.sendStacksOut();
                     roundRobinIndex += i + 1;
                     return true;
                 }
@@ -468,6 +485,10 @@ public class PatternProviderLogic implements InternalInventoryHost, ICraftingPro
 
     public boolean isBlocking() {
         return this.configManager.getSetting(Settings.BLOCKING_MODE) == YesNo.YES;
+    }
+
+    public boolean isAtomicPush() {
+        return this.configManager.getSetting(Settings.ATOMIC_PUSH) == YesNo.YES;
     }
 
     @Nullable

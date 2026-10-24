@@ -56,6 +56,8 @@ public class PatternProviderMenu extends AEBaseMenu {
     public LockCraftingMode craftingLockedReason = LockCraftingMode.NONE;
     @GuiSync(7)
     public GenericStack unlockStack = null;
+    @GuiSync(8)
+    public YesNo atomicPush = YesNo.NO;
 
     public PatternProviderMenu(MenuType<? extends PatternProviderMenu> menuType, int id, Inventory playerInventory,
             PatternProviderLogicHost host) {
@@ -88,6 +90,7 @@ public class PatternProviderMenu extends AEBaseMenu {
             lockCraftingMode = logic.getConfigManager().getSetting(Settings.LOCK_CRAFTING_MODE);
             craftingLockedReason = logic.getCraftingLockedReason();
             unlockStack = logic.getUnlockStack();
+            atomicPush = logic.getConfigManager().getSetting(Settings.ATOMIC_PUSH);
         }
 
         super.broadcastChanges();
@@ -111,6 +114,10 @@ public class PatternProviderMenu extends AEBaseMenu {
 
     public GenericStack getUnlockStack() {
         return unlockStack;
+    }
+
+    public YesNo getAtomicPush() {
+        return atomicPush;
     }
 
     public YesNo getShowInAccessTerminal() {

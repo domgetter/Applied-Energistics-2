@@ -42,6 +42,7 @@ public class PatternProviderScreen<C extends PatternProviderMenu> extends AEBase
     private final SettingToggleButton<LockCraftingMode> lockCraftingModeButton;
     private final ToggleButton showInPatternAccessTerminalButton;
     private final PatternProviderLockReason lockReason;
+    private final SettingToggleButton<YesNo> atomicPushButton;
 
     public PatternProviderScreen(C menu, Inventory playerInventory, Component title,
             ScreenStyle style) {
@@ -63,6 +64,9 @@ public class PatternProviderScreen<C extends PatternProviderMenu> extends AEBase
 
         this.lockReason = new PatternProviderLockReason(this);
         widgets.add("lockReason", this.lockReason);
+
+        this.atomicPushButton = new ServerSettingToggleButton<>(Settings.ATOMIC_PUSH, YesNo.YES);
+        this.addToLeftToolbar(this.atomicPushButton);
     }
 
     @Override
@@ -73,6 +77,7 @@ public class PatternProviderScreen<C extends PatternProviderMenu> extends AEBase
         this.blockingModeButton.set(this.menu.getBlockingMode());
         this.lockCraftingModeButton.set(this.menu.getLockCraftingMode());
         this.showInPatternAccessTerminalButton.setState(this.menu.getShowInAccessTerminal() == YesNo.YES);
+        this.atomicPushButton.set(this.menu.getAtomicPush());
     }
 
     private void selectNextPatternProviderMode() {
