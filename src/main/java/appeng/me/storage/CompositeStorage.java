@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.transfer.transaction.RootCommitJournal;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
@@ -23,6 +25,10 @@ public class CompositeStorage implements MEStorage, ITickingMonitor {
     private Map<AEKeyType, MEStorage> storages;
 
     private boolean forceCacheRebuild = true;
+
+    private final RootCommitJournal cacheRebuildJournal = new RootCommitJournal(() -> {
+        forceCacheRebuild = true;
+    });
 
     public CompositeStorage(Map<AEKeyType, MEStorage> storages) {
         this.storages = storages;
@@ -46,6 +52,18 @@ public class CompositeStorage implements MEStorage, ITickingMonitor {
 
         if (inserted > 0 && mode == Actionable.MODULATE) {
             forceCacheRebuild = true;
+        }
+
+        return inserted;
+    }
+
+    @Override
+    public long insert(AEKey what, long amount, TransactionContext txc, IActionSource source) {
+        var storage = storages.get(what.getType());
+        var inserted = storage != null ? storage.insert(what, amount, txc, source) : 0;
+
+        if (inserted > 0) {
+            cacheRebuildJournal.updateSnapshots(txc);
         }
 
         return inserted;

@@ -11,7 +11,9 @@ import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.resource.Resource;
+import net.neoforged.neoforge.transfer.transaction.RootCommitJournal;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
@@ -42,6 +44,16 @@ public abstract class ExternalStorageFacade implements MEStorage {
         this.changeListener = listener;
     }
 
+    /**
+     * Keep track of change listeners when inserting with a transaction. If we do not commit a transaction, the journal
+     * will not do the side effects.
+     */
+    private final RootCommitJournal changeListenerJournal = new RootCommitJournal(() -> {
+        if (this.changeListener != null) {
+            this.changeListener.run();
+        }
+    });
+
     public abstract int getSlots();
 
     @Override
@@ -66,6 +78,16 @@ public abstract class ExternalStorageFacade implements MEStorage {
     }
 
     @Override
+    public long insert(AEKey what, long amount, TransactionContext txc, IActionSource source) {
+        var inserted = insertExternal(what, Ints.saturatedCast(amount), txc);
+        if (inserted > 0) {
+            // Register changeListener side effect that will happen when we commit this transaction.
+            changeListenerJournal.updateSnapshots(txc);
+        }
+        return inserted;
+    }
+
+    @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
         var extracted = extractExternal(what, Ints.saturatedCast(amount), mode);
         if (extracted > 0 && mode == Actionable.MODULATE) {
@@ -82,6 +104,8 @@ public abstract class ExternalStorageFacade implements MEStorage {
     }
 
     protected abstract int insertExternal(AEKey what, int amount, Actionable mode);
+
+    protected abstract int insertExternal(AEKey what, int amount, TransactionContext txc);
 
     protected abstract int extractExternal(AEKey what, int amount, Actionable mode);
 
@@ -133,6 +157,19 @@ public abstract class ExternalStorageFacade implements MEStorage {
                 }
                 return inserted;
             }
+        }
+
+        @Override
+        public int insertExternal(AEKey what, int amount, TransactionContext txc) {
+            var resource = toResource(what);
+            if (resource == null) {
+                return 0;
+            }
+
+            // NeoForge ResourceHandler takes care of item/fluid snapshot, so we can just call
+            // insert directly with the transaction context.
+            var inserted = handler.insert(resource, amount, txc);
+            return inserted;
         }
 
         @Override

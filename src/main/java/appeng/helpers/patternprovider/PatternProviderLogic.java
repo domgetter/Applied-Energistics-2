@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -42,6 +43,7 @@ import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.LockCraftingMode;
@@ -359,18 +361,20 @@ public class PatternProviderLogic implements InternalInventoryHost, ICraftingPro
                 continue;
             }
 
-            if (this.adapterAcceptsAll(adapter, inputHolder)) {
+            try (var tx = Transaction.openRoot()) {
+                var pushedAll = new AtomicBoolean(true);
                 patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
-                    var inserted = adapter.insert(what, amount, Actionable.MODULATE);
+                    var inserted = adapter.insert(what, amount, tx);
                     if (inserted < amount) {
-                        this.addToSendList(what, amount - inserted);
+                        pushedAll.set(false);
                     }
                 });
-                onPushPatternSuccess(patternDetails);
-                this.sendDirection = direction;
-                this.sendStacksOut();
-                roundRobinIndex += i + 1;
-                return true;
+                if (pushedAll.get()) {
+                    tx.commit();
+                    onPushPatternSuccess(patternDetails);
+                    roundRobinIndex += i + 1;
+                    return true;
+                }
             }
         }
 

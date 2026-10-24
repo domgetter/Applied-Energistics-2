@@ -29,6 +29,7 @@ import com.google.common.base.Preconditions;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
@@ -72,6 +73,18 @@ public interface MEStorage {
      * @return returns the number of items inserted.
      */
     default long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
+        return 0;
+    }
+
+    /**
+     * Store new items using a transaction into the ME Inventory.
+     *
+     * @param what   what to insert
+     * @param amount how much of it to insert. must not be negative
+     * @param tx     transaction to use for insertion
+     * @return returns the number of items inserted. used to determine if transaction should be cancelled
+     */
+    default long insert(AEKey what, long amount, TransactionContext txc, IActionSource source) {
         return 0;
     }
 
