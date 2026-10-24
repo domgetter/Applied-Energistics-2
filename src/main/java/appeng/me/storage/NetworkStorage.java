@@ -29,6 +29,7 @@ import com.google.common.base.Preconditions;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
@@ -130,6 +131,58 @@ public class NetworkStorage implements MEStorage {
                     }
 
                     remaining -= inv.insert(what, remaining, type, src);
+                }
+            }
+
+        } finally {
+            mountsInUse = false;
+        }
+
+        flushQueuedOperations();
+
+        return amount - remaining;
+    }
+
+    public long insert(AEKey what, long amount, TransactionContext txc, IActionSource src) {
+        if (mountsInUse) {
+            return 0; // Prevent recursive use
+        }
+
+        var remaining = amount;
+
+        mountsInUse = true;
+        try {
+            for (var invList : this.priorityInventory.values()) {
+                secondPassInventories.clear();
+
+                // First give every inventory a chance to accept the item if it's preferential storage for the given
+                // stack
+                var ii = invList.iterator();
+                while (ii.hasNext() && remaining > 0) {
+                    var inv = ii.next();
+
+                    if (isQueuedForRemoval(inv)) {
+                        continue;
+                    }
+
+                    if (inv.isPreferredStorageFor(what, txc, src)) {
+                        remaining -= inv.insert(what, remaining, txc, src);
+                    } else {
+                        secondPassInventories.add(inv);
+                    }
+                }
+
+                // Then give every remaining inventory a chance
+                for (var inv : secondPassInventories) {
+                    if (remaining <= 0) {
+                        break;
+                    }
+
+                    if (isQueuedForRemoval(inv)) {
+                        continue;
+                    }
+
+                    remaining -= inv.insert(what, remaining, txc, src);
                 }
             }
 

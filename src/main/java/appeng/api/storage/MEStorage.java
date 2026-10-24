@@ -65,6 +65,19 @@ public interface MEStorage {
     }
 
     /**
+     * Returns whether this inventory is the preferred storage location for the given stack when being compared to other
+     * inventories of the same overall priority, and does so within a transaction.
+     * <p/>
+     * If for example an inventory already contains some amount of an item, it should be preferred over other
+     * inventories that don't when trying to store more of the item.
+     *
+     * @param source The source trying to find storage for stacks.
+     */
+    default boolean isPreferredStorageFor(AEKey what, TransactionContext txc, IActionSource source) {
+        return false;
+    }
+
+    /**
      * Store new items, or simulate the addition of new items into the ME Inventory.
      *
      * @param what   what to insert
@@ -81,7 +94,7 @@ public interface MEStorage {
      *
      * @param what   what to insert
      * @param amount how much of it to insert. must not be negative
-     * @param tx     transaction to use for insertion
+     * @param txc    transaction to use for insertion
      * @return returns the number of items inserted. used to determine if transaction should be cancelled
      */
     default long insert(AEKey what, long amount, TransactionContext txc, IActionSource source) {
@@ -97,6 +110,18 @@ public interface MEStorage {
      * @return returns the number of items extracted
      */
     default long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
+        return 0;
+    }
+
+    /**
+     * Extract the specified item using a transaction from the ME Inventory
+     *
+     * @param what   what to extract
+     * @param amount how much of it to extract (at most)
+     * @param txc    transaction to use for extraction
+     * @return returns the number of items extracted
+     */
+    default long extract(AEKey what, long amount, TransactionContext txc, IActionSource source) {
         return 0;
     }
 

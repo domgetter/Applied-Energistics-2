@@ -3,6 +3,7 @@ package appeng.me.storage;
 import java.util.Objects;
 
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
@@ -37,13 +38,28 @@ public class DelegatingMEInventory implements MEStorage {
     }
 
     @Override
+    public boolean isPreferredStorageFor(AEKey input, TransactionContext txc, IActionSource source) {
+        return getDelegate().isPreferredStorageFor(input, txc, source);
+    }
+
+    @Override
     public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
         return getDelegate().insert(what, amount, mode, source);
     }
 
     @Override
+    public long insert(AEKey what, long amount, TransactionContext txc, IActionSource source) {
+        return getDelegate().insert(what, amount, txc, source);
+    }
+
+    @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
         return getDelegate().extract(what, amount, mode, source);
+    }
+
+    @Override
+    public long extract(AEKey what, long amount, TransactionContext txc, IActionSource source) {
+        return getDelegate().extract(what, amount, txc, source);
     }
 
     @Override

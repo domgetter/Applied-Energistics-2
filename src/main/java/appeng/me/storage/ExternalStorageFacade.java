@@ -99,6 +99,15 @@ public abstract class ExternalStorageFacade implements MEStorage {
     }
 
     @Override
+    public long extract(AEKey what, long amount, TransactionContext txc, IActionSource source) {
+        var extracted = extractExternal(what, Ints.saturatedCast(amount), txc);
+        if (extracted > 0) {
+            changeListenerJournal.updateSnapshots(txc);
+        }
+        return extracted;
+    }
+
+    @Override
     public Component getDescription() {
         return GuiText.ExternalStorage.text(AEKeyType.fluids().getDescription());
     }
@@ -108,6 +117,8 @@ public abstract class ExternalStorageFacade implements MEStorage {
     protected abstract int insertExternal(AEKey what, int amount, TransactionContext txc);
 
     protected abstract int extractExternal(AEKey what, int amount, Actionable mode);
+
+    protected abstract int extractExternal(AEKey what, int amount, TransactionContext txc);
 
     public abstract boolean containsAnyFuzzy(Set<AEKey> keys);
 
@@ -186,6 +197,16 @@ public abstract class ExternalStorageFacade implements MEStorage {
                 }
                 return extracted;
             }
+        }
+
+        @Override
+        public int extractExternal(AEKey what, int amount, TransactionContext txc) {
+            var resource = toResource(what);
+            if (resource == null) {
+                return 0;
+            }
+
+            return handler.extract(resource, amount, txc);
         }
 
         @Override

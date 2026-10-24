@@ -18,6 +18,9 @@
 
 package appeng.me.storage;
 
+import net.neoforged.neoforge.transfer.transaction.Transaction;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+
 import appeng.api.config.Actionable;
 import appeng.api.config.IncludeExclude;
 import appeng.api.networking.security.IActionSource;
@@ -87,12 +90,31 @@ public class MEInventoryHandler extends DelegatingMEInventory {
     }
 
     @Override
+    public long insert(AEKey what, long amount, TransactionContext txc, IActionSource source) {
+        if (!this.allowInsertion || !passesBlackOrWhitelist(what)) {
+            return 0;
+        }
+
+        final var inserted = super.insert(what, amount, txc, source);
+        return this.voidOverflow ? amount : inserted;
+    }
+
+    @Override
     public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
         if (this.filterOnExtraction && !canExtract(what)) {
             return 0;
         }
 
         return super.extract(what, amount, mode, source);
+    }
+
+    @Override
+    public long extract(AEKey what, long amount, TransactionContext txc, IActionSource source) {
+        if (this.filterOnExtraction && !canExtract(what)) {
+            return 0;
+        }
+
+        return super.extract(what, amount, txc, source);
     }
 
     @Override
@@ -166,6 +188,25 @@ public class MEInventoryHandler extends DelegatingMEInventory {
         }
 
         return super.isPreferredStorageFor(input, source);
+    }
+
+    @Override
+    public boolean isPreferredStorageFor(AEKey input, TransactionContext txc, IActionSource source) {
+        if (this.partitionListMode == IncludeExclude.WHITELIST) {
+            if (this.partitionList.isListed(input)) {
+                return true;
+            }
+        }
+
+        // Inventories that already contain some equal stack are also preferred
+        // we use a copy of size 1 here to prevent inventories from attempting to query multiple sub-inventories
+        try (var nested = Transaction.open(txc)) {
+            if (super.extract(input, 1, nested, source) > 0) {
+                return true;
+            }
+        }
+
+        return super.isPreferredStorageFor(input, txc, source);
     }
 
     protected boolean canExtract(AEKey request) {
